@@ -119,12 +119,12 @@ print(eth_account)
 usd_account = client.get_account('USD')
 print(usd_account)
 
+long_position = True
+
 # Main function
 if __name__ == "__main__":
     start_date_time = 0
     end_date_time = 0
-
-    long_position = True
     
     # Wait for 15 minute interval
     print("Waiting for 15 minute interval to start...")
@@ -138,6 +138,8 @@ if __name__ == "__main__":
     rsi_overbought = 70
 
     def task():
+        global long_position
+
         # Get the last 14 15 minute candles (3.5 hours)
         end_date_time = int(time.mktime(datetime.now().timetuple()))
         start_date_time = end_date_time - seconds_in_fifteen_minutes*periods*4    # 900 seconds in 15 minutes
@@ -159,7 +161,7 @@ if __name__ == "__main__":
         print(current_rsi)
 
         if long_position and (current_rsi > rsi_overbought):
-            max_eth_amount = eth_account = float(client.get_account('ETH')['balance']['amount'])
+            max_eth_amount = float(client.get_account('ETH')['balance']['amount'])
             print ("PLACE SELL ORDER ", max_eth_amount, " ETH")
             payload = {
                 "client_order_id": str(np.random.randint(2**63)),
@@ -175,7 +177,7 @@ if __name__ == "__main__":
             long_position = False
         
         elif (not long_position) and  (current_rsi < rsi_oversold):
-            max_usd_amount = usd_account = float(client.get_account('USD')['balance']['amount'])
+            max_usd_amount = float(client.get_account('USD')['balance']['amount'])
             print ("PLACE BUY ORDER ", max_usd_amount, " USD")
             payload = {
                 "client_order_id": str(np.random.randint(2**63)),
