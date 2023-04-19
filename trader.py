@@ -7,6 +7,8 @@ import time
 import hmac
 import hashlib
 from threading import Thread
+import requests
+import datetime
 
 # Get the keys from the environment variables
 api_key = os.environ['CB_KEY']
@@ -18,6 +20,27 @@ client = Client(api_key, api_secret)
 # Get the ethereum account
 eth_account = client.get_account('ETH')
 print(eth_account)
+
+# Sign a message
+def sign_message(request) -> requests.Request:
+    """Signs the request"""
+
+    timestamp = str(int(time.time()))
+    body = (request.body or b"").decode()
+    url = request.path_url.split("?")[0]
+    message = f"{timestamp}{request.method}{url}{body}"
+    signature = hmac.new(api_secret.encode("utf-8"), message.encode("utf-8"), digestmod=hashlib.sha256).hexdigest()
+
+    request.headers.update(
+        {
+            "CB-ACCESS-SIGN": signature,
+            "CB-ACCESS-TIMESTAMP": timestamp,
+            "CB-ACCESS-KEY": api_key,
+            "Content-Type": "application/json",
+        }
+    )
+
+    return request
 
 def main():
     ws = None
@@ -89,4 +112,19 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # get some candles with the API first
+    # start time
+    start_date_time = datetime.datetime(2023, 4, 18, 12, 00)
+    start_date_time = int(time.mktime(start_date_time.timetuple()))
+    end_date_time = datetime.datetime(2023, 4, 18, 17, 00)
+    end_date_time = int(time.mktime(end_date_time.timetuple()))
+
+    print(start_date_time)
+    print(end_date_time)
+
+    payload = {"start": start_date_time, "end": end_date_time, "granularity": "FIFTEEN_MINUTE"}
+    resp = requests.get("https://api.coinbase.com/api/v3/brokerage/products/ETH-USD/candles", params=payload, auth=sign_message)
+    print(resp.json())
+
+    # main()
+    
