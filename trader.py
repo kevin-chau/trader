@@ -134,8 +134,8 @@ if __name__ == "__main__":
     periods = 14
     seconds_in_fifteen_minutes = 900
 
-    rsi_oversold = 45
-    rsi_overbought = 55
+    rsi_oversold = 30
+    rsi_overbought = 70
 
     def task():
         # Get the last 14 15 minute candles (3.5 hours)
@@ -171,9 +171,9 @@ if __name__ == "__main__":
                     }
                 }
             }
+            resp = requests.post(order_api, params=payload, auth=sign_message)
             long_position = False
-
-            # resp = requests.post(order_api, params=payload, auth=sign_message)
+        
         elif (not long_position) and  (current_rsi < rsi_oversold):
             max_usd_amount = usd_account = float(client.get_account('USD')['balance']['amount'])
             print ("PLACE BUY ORDER ", max_usd_amount, " USD")
