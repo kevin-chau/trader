@@ -134,8 +134,8 @@ if __name__ == "__main__":
     periods = 14
     seconds_in_fifteen_minutes = 900
 
-    rsi_oversold = 30
-    rsi_overbought = 70
+    rsi_oversold = 25
+    rsi_overbought = 75
 
     def task():
         global long_position
@@ -157,8 +157,7 @@ if __name__ == "__main__":
         price_series = pd.Series(np_prices)
         rsi = ta.momentum.rsi(price_series, periods, False)
         current_rsi = rsi.iloc[-1]
-        print("current RSI is: ")
-        print(current_rsi)
+        print(datetime.now(), " RSI: ", current_rsi)
 
         if long_position and (current_rsi > rsi_overbought):
             max_eth_amount = float(client.get_account('ETH')['balance']['amount'])
