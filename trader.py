@@ -110,6 +110,14 @@ def websocket_receive():
     thread.start()
 
 eth_candles_api = 'https://api.coinbase.com/api/v3/brokerage/products/ETH-USD/candles'
+order_api = 'https://api.coinbase.com/api/v3/brokerage/orders'
+
+accounts = client.get_accounts()
+
+eth_account = client.get_account('ETH')
+print(eth_account)
+usd_account = client.get_account('USD')
+print(usd_account)
 
 # Main function
 if __name__ == "__main__":
@@ -119,12 +127,15 @@ if __name__ == "__main__":
     long_position = True
     
     # Wait for 15 minute interval
-    # print("Waiting for 15 minute interval to start...")
-    # while datetime.now().minute not in {0, 15, 30, 45}:  # Wait 1 second until we are synced up with the 'every 15 minutes' clock
-    #     time.sleep(1)
+    print("Waiting for 15 minute interval to start...")
+    while datetime.now().minute not in {0, 15, 30, 45}:  # Wait 1 second until we are synced up with the 'every 15 minutes' clock
+        time.sleep(1)
 
     periods = 14
     seconds_in_fifteen_minutes = 900
+
+    rsi_oversold = 45
+    rsi_overbought = 55
 
     def task():
         # Get the last 14 15 minute candles (3.5 hours)
@@ -147,9 +158,37 @@ if __name__ == "__main__":
         print("current RSI is: ")
         print(current_rsi)
 
-        if long_position and (current_rsi > 70):
-            print ("PLACE SELL ORDER")
+        if long_position and (current_rsi > rsi_overbought):
+            max_eth_amount = eth_account = float(client.get_account('ETH')['balance']['amount'])
+            print ("PLACE SELL ORDER ", max_eth_amount, " ETH")
+            payload = {
+                "client_order_id": str(np.random.randint(2**63)),
+                "product_id": "ETH-USD",
+                "side": "SELL",
+                "order_configuration": {
+                    "market_market_ioc": {
+                        "base_size": max_eth_amount,
+                    }
+                }
+            }
+            long_position = False
 
+            # resp = requests.post(order_api, params=payload, auth=sign_message)
+        elif (not long_position) and  (current_rsi < rsi_oversold):
+            max_usd_amount = usd_account = float(client.get_account('USD')['balance']['amount'])
+            print ("PLACE BUY ORDER ", max_usd_amount, " USD")
+            payload = {
+                "client_order_id": str(np.random.randint(2**63)),
+                "product_id": "ETH-USD",
+                "side": "BUY",
+                "order_configuration": {
+                    "market_market_ioc": {
+                        "quote_size": max_usd_amount,
+                    }
+                }
+            }
+            resp = requests.post(order_api, params=payload, auth=sign_message)
+            long_position = True
 
     task()
 
