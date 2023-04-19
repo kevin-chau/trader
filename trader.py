@@ -8,7 +8,10 @@ import hmac
 import hashlib
 from threading import Thread
 import requests
-import datetime
+from datetime import datetime
+import ta
+import numpy as np
+import pandas as pd
 
 # Get the keys from the environment variables
 api_key = os.environ['CB_KEY']
@@ -16,10 +19,6 @@ api_secret = os.environ['CB_SECRET']
 
 # Make a new client
 client = Client(api_key, api_secret)
-
-# Get the ethereum account
-eth_account = client.get_account('ETH')
-print(eth_account)
 
 # Sign a message
 def sign_message(request) -> requests.Request:
@@ -42,7 +41,7 @@ def sign_message(request) -> requests.Request:
 
     return request
 
-def main():
+def websocket_receive():
     ws = None
     thread = None
     thread_running = False
@@ -110,21 +109,53 @@ def main():
     thread_keepalive = Thread(target=websocket_keepalive)
     thread.start()
 
+eth_candles_api = 'https://api.coinbase.com/api/v3/brokerage/products/ETH-USD/candles'
 
+# Main function
 if __name__ == "__main__":
-    # get some candles with the API first
-    # start time
-    start_date_time = datetime.datetime(2023, 4, 18, 12, 00)
-    start_date_time = int(time.mktime(start_date_time.timetuple()))
-    end_date_time = datetime.datetime(2023, 4, 18, 17, 00)
-    end_date_time = int(time.mktime(end_date_time.timetuple()))
+    start_date_time = 0
+    end_date_time = 0
 
-    print(start_date_time)
-    print(end_date_time)
+    long_position = True
+    
+    # Wait for 15 minute interval
+    # print("Waiting for 15 minute interval to start...")
+    # while datetime.now().minute not in {0, 15, 30, 45}:  # Wait 1 second until we are synced up with the 'every 15 minutes' clock
+    #     time.sleep(1)
 
-    payload = {"start": start_date_time, "end": end_date_time, "granularity": "FIFTEEN_MINUTE"}
-    resp = requests.get("https://api.coinbase.com/api/v3/brokerage/products/ETH-USD/candles", params=payload, auth=sign_message)
-    print(resp.json())
+    periods = 14
+    seconds_in_fifteen_minutes = 900
 
-    # main()
+    def task():
+        # Get the last 14 15 minute candles (3.5 hours)
+        end_date_time = int(time.mktime(datetime.now().timetuple()))
+        start_date_time = end_date_time - seconds_in_fifteen_minutes*periods*4    # 900 seconds in 15 minutes
+        payload = {"start": start_date_time, "end": end_date_time, "granularity": "FIFTEEN_MINUTE"}
+        candles = requests.get(eth_candles_api, params=payload, auth=sign_message)
+
+        closing_prices = []
+        for candle in candles.json()['candles']:
+            closing_prices.append(float(candle['close']))
+
+        # reverse the prices
+        closing_prices.reverse()
+
+        np_prices = np.array(closing_prices)
+        price_series = pd.Series(np_prices)
+        rsi = ta.momentum.rsi(price_series, periods, False)
+        current_rsi = rsi.iloc[-1]
+        print("current RSI is: ")
+        print(current_rsi)
+
+        if long_position and (current_rsi > 70):
+            print ("PLACE SELL ORDER")
+
+
+    task()
+
+    while True:
+        time.sleep(60*15)  # Wait for 15 minutes
+        task()
+
+    # websocket_receive()
     
