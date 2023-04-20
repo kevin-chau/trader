@@ -120,9 +120,8 @@ usd_account = client.get_account('USD')
 print(usd_account)
 
 long_position = True
-
-# Main function
-if __name__ == "__main__":
+    
+def main_loop():
     start_date_time = 0
     end_date_time = 0
     
@@ -197,5 +196,15 @@ if __name__ == "__main__":
         time.sleep(60*15)  # Wait for 15 minutes
         task()
 
-    # websocket_receive()
+
+
+# Main function
+if __name__ == "__main__":
+    while True:
+        try:
+            main_loop()
+        except:
+            time.sleep(30)
+	
+        print("Connection lost...retrying...")
     
