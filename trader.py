@@ -112,26 +112,28 @@ def websocket_receive():
 eth_candles_api = 'https://api.coinbase.com/api/v3/brokerage/products/ETH-USD/candles'
 order_api = 'https://api.coinbase.com/api/v3/brokerage/orders'
 
-accounts = client.get_accounts()
-
-eth_account = client.get_account('ETH')
-print(eth_account)
-usd_account = client.get_account('USD')
-print(usd_account)
-
-long_position = True
+long_position = False
     
 def main_loop():
     start_date_time = 0
     end_date_time = 0
+    periods = 14
+    seconds_in_fifteen_minutes = 900
+
+    # Test for a connection first
+    eth_account = client.get_account('ETH')
+    print(eth_account)
+    usd_account = client.get_account('USD')
+    print(usd_account)
+    end_date_time = int(time.mktime(datetime.now().timetuple()))
+    start_date_time = end_date_time - seconds_in_fifteen_minutes*periods*4    # 900 seconds in 15 minutes
+    payload = {"start": start_date_time, "end": end_date_time, "granularity": "FIFTEEN_MINUTE"}
+    candles = requests.get(eth_candles_api, params=payload, auth=sign_message)
     
     # Wait for 15 minute interval
     print("Waiting for 15 minute interval to start...")
     while datetime.now().minute not in {0, 15, 30, 45}:  # Wait 1 second until we are synced up with the 'every 15 minutes' clock
         time.sleep(1)
-
-    periods = 14
-    seconds_in_fifteen_minutes = 900
 
     rsi_oversold = 25
     rsi_overbought = 75
