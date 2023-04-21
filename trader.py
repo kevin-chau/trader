@@ -164,7 +164,7 @@ def main_loop():
             max_eth_amount = float(client.get_account('ETH')['balance']['amount'])
             print ("PLACE SELL ORDER ", max_eth_amount, " ETH")
             payload = {
-                "client_order_id": str(np.random.randint(2**63)),
+                "client_order_id": str(np.random.randint(2**31)),
                 "product_id": "ETH-USD",
                 "side": "SELL",
                 "order_configuration": {
@@ -180,7 +180,7 @@ def main_loop():
             max_usd_amount = float(client.get_account('USD')['balance']['amount'])
             print ("PLACE BUY ORDER ", max_usd_amount, " USD")
             payload = {
-                "client_order_id": str(np.random.randint(2**63)),
+                "client_order_id": str(np.random.randint(2**31)),
                 "product_id": "ETH-USD",
                 "side": "BUY",
                 "order_configuration": {
