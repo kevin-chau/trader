@@ -229,7 +229,6 @@ if __name__ == "__main__":
 conn = http.client.HTTPSConnection("api.coinbase.com")
 endpoint= f'/api/v3/brokerage/orders'
 method = 'POST'
-guid = str(uuid.uuid1())
 
 body = json.dumps({
                 "client_order_id": str(np.random.randint(2**31)),
@@ -237,7 +236,7 @@ body = json.dumps({
                 "side": "SELL",
                 "order_configuration": {
                     "market_market_ioc": {
-                        "base_size": max_eth_amount,
+                        "base_size": str(max_eth_amount),
                     }
                 }
             })
