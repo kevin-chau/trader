@@ -12,6 +12,21 @@ from datetime import datetime
 import ta
 import numpy as np
 import pandas as pd
+import http.client
+import uuid
+
+def create_header(method = "GET", endpoint = "", body = ""):
+  timestamp = str(int(time.time()))
+  message = timestamp + method + endpoint + str(body or '')
+  signature = hmac.new(api_secret.encode('utf-8'), message.encode('utf-8'), digestmod=hashlib.sha256).hexdigest()
+  payload = body
+  headers = {
+    "Content-Type": "application/json",
+    "CB-ACCESS-KEY": to_native_string(api_key),
+    "CB-ACCESS-SIGN": to_native_string(signature),
+    "CB-ACCESS-TIMESTAMP": to_native_string(timestamp)
+  }
+  return headers, payload
 
 # Get the keys from the environment variables
 api_key = os.environ['CB_KEY']
@@ -23,13 +38,11 @@ client = Client(api_key, api_secret)
 # Sign a message
 def sign_message(request) -> requests.Request:
     """Signs the request"""
-
     timestamp = str(int(time.time()))
     body = (request.body or b"").decode()
     url = request.path_url.split("?")[0]
     message = f"{timestamp}{request.method}{url}{body}"
     signature = hmac.new(api_secret.encode("utf-8"), message.encode("utf-8"), digestmod=hashlib.sha256).hexdigest()
-
     request.headers.update(
         {
             "CB-ACCESS-SIGN": signature,
@@ -38,7 +51,6 @@ def sign_message(request) -> requests.Request:
             "Content-Type": "application/json",
         }
     )
-
     return request
 
 def websocket_receive():
@@ -110,7 +122,7 @@ def websocket_receive():
     thread.start()
 
 eth_candles_api = 'https://api.coinbase.com/api/v3/brokerage/products/ETH-USD/candles'
-order_api = 'https://api.coinbase.com/api/v3/brokerage/orders'
+order_api = "https://api.coinbase.com/api/v3/brokerage/orders"
 
 long_position = False
     
@@ -165,7 +177,7 @@ def main_loop():
             print ("PLACE SELL ORDER ", max_eth_amount, " ETH")
             payload = {
                 "client_order_id": str(np.random.randint(2**31)),
-                "product_id": "ETH-USD",
+                "product_id": "ETH-USDT",
                 "side": "SELL",
                 "order_configuration": {
                     "market_market_ioc": {
@@ -185,7 +197,7 @@ def main_loop():
                 "side": "BUY",
                 "order_configuration": {
                     "market_market_ioc": {
-                        "quote_size": max_usd_amount,
+                        "quote_size": str(max_usd_amount),
                     }
                 }
             }
@@ -210,3 +222,30 @@ if __name__ == "__main__":
 	
         print("Connection lost...retrying...")
     
+
+
+
+#### API CALL ####
+conn = http.client.HTTPSConnection("api.coinbase.com")
+endpoint= f'/api/v3/brokerage/orders'
+method = 'POST'
+guid = str(uuid.uuid1())
+
+body = json.dumps({
+                "client_order_id": str(np.random.randint(2**31)),
+                "product_id": "ETH-USDT",
+                "side": "SELL",
+                "order_configuration": {
+                    "market_market_ioc": {
+                        "base_size": max_eth_amount,
+                    }
+                }
+            })
+print(body)
+
+headers, payload = create_header(method=method, endpoint=endpoint, body=body)
+
+conn.request(method, endpoint, payload, headers)
+res = conn.getresponse()
+data = res.read()
+print(data)
