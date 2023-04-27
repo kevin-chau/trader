@@ -13,18 +13,20 @@ import ta
 import numpy as np
 import pandas as pd
 import http.client
+from requests.utils import to_native_string
 
-def create_header(method = "GET", endpoint = ""):
+def create_header(method = "GET", endpoint = "", body = ""):
   timestamp = str(int(time.time()))
   message = timestamp + method + endpoint + str(body or '')
   signature = hmac.new(api_secret.encode('utf-8'), message.encode('utf-8'), digestmod=hashlib.sha256).hexdigest()
+  payload = body
   header = {
     "Content-Type": "application/json",
     "CB-ACCESS-KEY": to_native_string(api_key),
     "CB-ACCESS-SIGN": to_native_string(signature),
     "CB-ACCESS-TIMESTAMP": to_native_string(timestamp)
   }
-  return header
+  return header, payload
 
 #### API CALL ####
 conn = http.client.HTTPSConnection("api.coinbase.com")
@@ -151,8 +153,8 @@ def main_loop():
         time.sleep(1)
 
     # globalize these
-    rsi_oversold = 25
-    rsi_overbought = 75
+    rsi_oversold = 15
+    rsi_overbought = 85
 
     def task():
         global long_position
@@ -179,9 +181,9 @@ def main_loop():
         if long_position and (current_rsi > rsi_overbought):
             max_eth_amount = float(client.get_account('ETH')['balance']['amount'])
             print ("PLACE SELL ORDER ", max_eth_amount, " ETH")
-            payload = json.dumps({
+            body = json.dumps({
                 "client_order_id": str(np.random.randint(2**31)),
-                "product_id": "ETH-USD",
+                "product_id": "ETH-USDT",
                 "side": "SELL",
                 "order_configuration": {
                     "market_market_ioc": {
@@ -189,9 +191,9 @@ def main_loop():
                     }
                 }
             })
-
-            header = create_header(method=method, endpoint=endpoint)
-            conn.request(method, endpoint, payload, headers)
+            print(body)
+            header, payload = create_header(method=method, endpoint=endpoint, body=body)
+            conn.request(method, endpoint, payload, header)
             res = conn.getresponse()
             data = res.read()
             print(data)
@@ -200,7 +202,7 @@ def main_loop():
         elif (not long_position) and  (current_rsi < rsi_oversold):
             max_usd_amount = float(client.get_account('USDT')['balance']['amount'])
             print ("PLACE BUY ORDER ", max_usd_amount, " USDT")
-            payload = json.dumps({
+            body = json.dumps({
                 "client_order_id": str(np.random.randint(2**31)),
                 "product_id": "ETH-USDT",
                 "side": "BUY",
@@ -210,9 +212,9 @@ def main_loop():
                     }
                 }
             })
-
-            header = create_header(method=method, endpoint=endpoint)
-            conn.request(method, endpoint, payload, headers)
+            print(body)
+            header, payload = create_header(method=method, endpoint=endpoint, body=body)
+            conn.request(method, endpoint, payload, header)
             res = conn.getresponse()
             data = res.read()
             print(data)
