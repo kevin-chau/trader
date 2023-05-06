@@ -153,8 +153,8 @@ def main_loop():
         time.sleep(1)
 
     # globalize these
-    rsi_oversold = 15
-    rsi_overbought = 85
+    rsi_oversold = 20
+    rsi_overbought = 80
 
     def task():
         global long_position
@@ -208,7 +208,7 @@ def main_loop():
                 "side": "BUY",
                 "order_configuration": {
                     "market_market_ioc": {
-                        "quote_size": str(max_usd_amount),
+                        "quote_size": "{:.2f}".format(max_usd_amount,2),
                     }
                 }
             })
