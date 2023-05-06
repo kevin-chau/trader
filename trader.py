@@ -181,6 +181,7 @@ def main_loop():
         if long_position and (current_rsi > rsi_overbought):
             max_eth_amount = float(client.get_account('ETH')['balance']['amount'])
             print ("PLACE SELL ORDER ", max_eth_amount, " ETH")
+            print("PRICE: ", closing_prices[0])
             body = json.dumps({
                 "client_order_id": str(np.random.randint(2**31)),
                 "product_id": "ETH-USDT",
@@ -202,6 +203,7 @@ def main_loop():
         elif (not long_position) and  (current_rsi < rsi_oversold):
             max_usd_amount = float(client.get_account('USDT')['balance']['amount'])
             print ("PLACE BUY ORDER ", max_usd_amount, " USDT")
+            print("PRICE: ", closing_prices[0])
             body = json.dumps({
                 "client_order_id": str(np.random.randint(2**31)),
                 "product_id": "ETH-USDT",
