@@ -129,7 +129,7 @@ def websocket_receive():
 eth_candles_api = 'https://api.coinbase.com/api/v3/brokerage/products/ETH-USD/candles'
 order_api = "https://api.coinbase.com/api/v3/brokerage/orders"
 
-long_position = False
+long_position = True
     
 def main_loop():
     start_date_time = 0
@@ -179,9 +179,10 @@ def main_loop():
         print(datetime.now(), " RSI: ", current_rsi)
 
         if long_position and (current_rsi > rsi_overbought):
+            print("RSI OVERBOUGHT!")
             max_eth_amount = float(client.get_account('ETH')['balance']['amount'])
             print ("PLACE SELL ORDER ", max_eth_amount, " ETH")
-            print("PRICE: ", closing_prices[0])
+            print("PRICE: ", closing_prices[-1])
             body = json.dumps({
                 "client_order_id": str(np.random.randint(2**31)),
                 "product_id": "ETH-USDT",
@@ -201,9 +202,10 @@ def main_loop():
             long_position = False
         
         elif (not long_position) and  (current_rsi < rsi_oversold):
+            print("RSI OVERSOLD!")
             max_usd_amount = float(client.get_account('USDT')['balance']['amount'])
             print ("PLACE BUY ORDER ", max_usd_amount, " USDT")
-            print("PRICE: ", closing_prices[0])
+            print("PRICE: ", closing_prices[-1])
             body = json.dumps({
                 "client_order_id": str(np.random.randint(2**31)),
                 "product_id": "ETH-USDT",
@@ -233,7 +235,8 @@ if __name__ == "__main__":
     while True:
         try:
             main_loop()
-        except:
+        except Exception as e:
+            print(e)
             time.sleep(30)
 	
         print("Connection lost...retrying...")
