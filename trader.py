@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import http.client
 from requests.utils import to_native_string
+import traceback
 
 def create_header(method = "GET", endpoint = "", body = ""):
   timestamp = str(int(time.time()))
@@ -29,7 +30,6 @@ def create_header(method = "GET", endpoint = "", body = ""):
   return header, payload
 
 #### API CALL ####
-conn = http.client.HTTPSConnection("api.coinbase.com")
 endpoint= f'/api/v3/brokerage/orders'
 method = 'POST'
 
@@ -132,6 +132,9 @@ order_api = "https://api.coinbase.com/api/v3/brokerage/orders"
 long_position = True
     
 def main_loop():
+    # Make a new client
+    client = Client(api_key, api_secret)
+    
     start_date_time = 0
     end_date_time = 0
     periods = 14
@@ -177,7 +180,10 @@ def main_loop():
         rsi = ta.momentum.rsi(price_series, periods, False)
         current_rsi = rsi.iloc[-1]
         print(datetime.now(), " RSI: ", current_rsi)
-
+        
+        # Make a new client
+        client = Client(api_key, api_secret)
+        
         if long_position and (current_rsi > rsi_overbought):
             print("RSI OVERBOUGHT!")
             max_eth_amount = float(client.get_account('ETH')['balance']['amount'])
@@ -195,8 +201,10 @@ def main_loop():
             })
             print(body)
             header, payload = create_header(method=method, endpoint=endpoint, body=body)
+            conn = http.client.HTTPSConnection("api.coinbase.com")
             conn.request(method, endpoint, payload, header)
             res = conn.getresponse()
+            conn.close()
             data = res.read()
             print(data)
             long_position = False
@@ -218,11 +226,13 @@ def main_loop():
             })
             print(body)
             header, payload = create_header(method=method, endpoint=endpoint, body=body)
+            conn = http.client.HTTPSConnection("api.coinbase.com")
             conn.request(method, endpoint, payload, header)
             res = conn.getresponse()
             data = res.read()
             print(data)
             long_position = True
+            conn.close()
 
     task()
 
@@ -237,6 +247,7 @@ if __name__ == "__main__":
             main_loop()
         except Exception as e:
             print(e)
+            print(traceback.format_exc())
             time.sleep(30)
 	
         print("Connection lost...retrying...")
