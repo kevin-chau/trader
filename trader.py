@@ -204,10 +204,10 @@ def main_loop():
             conn = http.client.HTTPSConnection("api.coinbase.com")
             conn.request(method, endpoint, payload, header)
             res = conn.getresponse()
-            conn.close()
             data = res.read()
             print(data)
             long_position = False
+            conn.close()
         
         elif (not long_position) and  (current_rsi < rsi_oversold):
             print("RSI OVERSOLD!")
